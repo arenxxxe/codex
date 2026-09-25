@@ -245,6 +245,13 @@ impl Command {
         job.prepare_suspended_spawn(&mut self.inner);
     }
 
+    /// Sets Windows process creation flags for the child.
+    #[cfg(windows)]
+    pub fn creation_flags(&mut self, flags: u32) -> &mut Self {
+        self.inner.creation_flags(flags);
+        self
+    }
+
     /// Reject original inputs that std replaced with a NUL-free placeholder.
     #[cfg(unix)]
     pub(crate) fn validate(&self) -> io::Result<()> {

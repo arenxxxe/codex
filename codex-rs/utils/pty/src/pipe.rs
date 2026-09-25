@@ -24,6 +24,8 @@ use tokio::io::BufReader;
 use tokio::sync::mpsc;
 use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
+#[cfg(windows)]
+use winapi::um::winbase::CREATE_NO_WINDOW;
 
 use crate::process::ChildTerminator;
 use crate::process::ProcessHandle;
@@ -169,6 +171,9 @@ async fn spawn_process_with_stdin_mode(
             PipeStdinMode::Piped => ChildStdin::Piped,
             PipeStdinMode::Null => ChildStdin::Null,
         });
+
+    #[cfg(windows)]
+    command.creation_flags(CREATE_NO_WINDOW);
 
     #[cfg(windows)]
     let job = crate::win::JobObject::create().map(Arc::new);
