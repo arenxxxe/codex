@@ -1458,6 +1458,12 @@ async fn run_auto_compact(
     phase: CompactionPhase,
 ) -> CodexResult<()> {
     let turn_context = &step_context.turn;
+    if crate::working_memory::Settings::load(&turn_context.config.codex_home)
+        .map_err(|err| CodexErrorDetails::InvalidRequest(err.to_string()))?
+        .enabled
+    {
+        return Ok(());
+    }
     let _profile_guard = turn_context.turn_timing_state.begin_compaction();
     if turn_context.config.features.enabled(Feature::TokenBudget) {
         // Compaction is the reset request, so force a new context window
@@ -1646,6 +1652,9 @@ async fn run_sampling_request(
         let responses_metadata = sess
             .responses_metadata(step_context.as_ref(), CodexResponsesRequestKind::Turn)
             .await;
+        let prompt = crate::working_memory::prepare(&sess, &turn_context.config.codex_home, prompt)
+            .await
+            .map_err(|err| CodexErrorDetails::InvalidRequest(format!("Working memory: {err:#}")))?;
         if crate::guardian::is_basic_session_source(&turn_context.session_source) {
             crate::guardian::prepare_guardian_prompt(
                 &sess,
