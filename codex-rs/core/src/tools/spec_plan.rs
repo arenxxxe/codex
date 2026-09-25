@@ -149,6 +149,12 @@ pub(crate) fn build_tool_router(
     };
     let mut registry = ToolRegistry::with_tool_policy(Arc::clone(&session.tool_policy));
     add_core_tool_sources(&context, &mut registry);
+    if crate::working_memory::Settings::load(&turn_context.config.codex_home)
+        .map_err(|err| codex_protocol::error::CodexErrorDetails::InvalidRequest(err.to_string()))?
+        .enabled
+    {
+        registry.add(crate::tools::handlers::WorkingMemoryHandler);
+    }
 
     let registered_mcp_tools = session.services.mcp_handler_cache.append_mcp_tools(
         mcp,

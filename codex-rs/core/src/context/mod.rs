@@ -51,6 +51,8 @@ mod unsupported_media;
 mod user_instructions;
 mod user_shell_command;
 mod user_verification_notice;
+mod working_memory;
+pub(crate) use working_memory::WorkingMemoryInstructions;
 pub(crate) mod world_state;
 
 pub(crate) use agent_message_board_notification::AgentMessageBoardNotification;
