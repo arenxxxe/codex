@@ -1,3 +1,4 @@
+#![recursion_limit = "256"]
 //! Same-build helper lifecycle with privately owned runtime, transport and opt-in local devices.
 //! Queued privacy controls take priority over starting another capture batch.
 

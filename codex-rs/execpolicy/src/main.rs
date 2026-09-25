@@ -1,3 +1,4 @@
+#![recursion_limit = "256"]
 use anyhow::Result;
 use clap::Parser;
 use codex_execpolicy::ExecPolicyCheckCommand;

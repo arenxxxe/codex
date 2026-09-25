@@ -1,3 +1,4 @@
+#![recursion_limit = "256"]
 //! Generates the canonical config schema fixture for development and releases.
 
 use anyhow::Result;

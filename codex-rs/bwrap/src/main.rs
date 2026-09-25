@@ -1,3 +1,4 @@
+#![recursion_limit = "256"]
 #[cfg(all(target_os = "linux", bwrap_available))]
 fn main() {
     use std::ffi::CStr;

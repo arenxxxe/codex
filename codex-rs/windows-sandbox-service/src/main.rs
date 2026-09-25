@@ -1,3 +1,4 @@
+#![recursion_limit = "256"]
 use anyhow::Result;
 use codex_windows_sandbox_service::RunMode;
 
