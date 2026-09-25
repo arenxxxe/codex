@@ -1,3 +1,4 @@
+#![recursion_limit = "256"]
 //! Cargo entry point for the minimal exec-server integration-test fixture.
 //!
 //! This mirrors `//codex-rs/exec-server/testing:exec-server` so Cargo-backed

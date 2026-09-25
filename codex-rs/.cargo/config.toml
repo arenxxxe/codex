@@ -1,3 +1,10 @@
+[build]
+# Keep the desktop responsive on the local 20-thread / 32 GB machine.
+jobs = 2
+
+[alias]
+quick = "build --profile dev-small -p codex-cli --bin codex"
+
 [target.'cfg(all(windows, target_env = "msvc"))']
 rustflags = ["-C", "link-arg=/STACK:8388608", "-C", "target-feature=+crt-static"]
 
