@@ -3,6 +3,8 @@ use std::ffi::OsStr;
 use std::ffi::OsString;
 use std::future::Future;
 use std::io::ErrorKind;
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 use std::path::Path;
 #[cfg(not(unix))]
 use std::process::Stdio;
@@ -228,7 +230,7 @@ pub(crate) async fn run_command(
             Ok(child) => Ok(child),
             Err(_) => {
                 process_tree_job = None;
-                command.creation_flags(0);
+                command.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
                 command.spawn()
             }
         },
@@ -350,6 +352,8 @@ impl Drop for ProcessTreeGuard {
             } else {
                 let _ = std::process::Command::new("taskkill")
                     .args(["/PID", &process_id.to_string(), "/T", "/F"])
+                    // CREATE_NO_WINDOW: avoid a console flash from detached parents.
+                    .creation_flags(0x0800_0000)
                     .stdin(Stdio::null())
                     .stdout(Stdio::null())
                     .stderr(Stdio::null())

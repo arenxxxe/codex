@@ -58,6 +58,10 @@ pub(crate) fn notify_hook(argv: Vec<String>, environment: Arc<Vec<(OsString, OsS
                     command.arg(notify_payload);
                 }
 
+                // CREATE_NO_WINDOW: avoid a console flash from detached parents.
+                #[cfg(windows)]
+                command.creation_flags(0x0800_0000);
+
                 command
                     .stdin(Stdio::null())
                     .stdout(Stdio::null())
