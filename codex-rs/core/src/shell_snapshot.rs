@@ -1082,6 +1082,9 @@ async fn run_script_with_timeout(
         handler.envs(env);
     }
     codex_protocol::shell_environment::scrub_non_inheritable_env_vars(handler.as_std_mut());
+    // CREATE_NO_WINDOW: avoid a console flash from detached parents.
+    #[cfg(windows)]
+    handler.creation_flags(0x0800_0000);
     #[cfg(unix)]
     let output = {
         let settings = handler.as_std();

@@ -72,6 +72,9 @@ pub(crate) async fn spawn_child_async(request: SpawnChildRequest<'_>) -> std::io
     cmd.arg0(arg0.map_or_else(|| program.to_string_lossy().to_string(), String::from));
     cmd.args(args);
     cmd.current_dir(cwd);
+    // CREATE_NO_WINDOW: avoid a console flash from detached parents.
+    #[cfg(windows)]
+    cmd.creation_flags(0x0800_0000);
     if let Some(network) = network {
         network.apply_to_env(&mut env);
     }

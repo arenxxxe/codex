@@ -1,3 +1,5 @@
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 use std::path::PathBuf;
 
 use codex_utils_absolute_path::AbsolutePathBuf;
@@ -105,19 +107,19 @@ pub fn try_find_powershell_executable_blocking() -> Option<AbsolutePathBuf> {
 /// has installed pwsh.exe, it may not be available in the system PATH, in which
 /// case we attempt to locate it via other means.
 pub fn try_find_pwsh_executable_blocking() -> Option<AbsolutePathBuf> {
-    if let Some(ps_home) = std::process::Command::new("cmd")
-        .args(["/C", "pwsh", "-NoProfile", "-Command", "$PSHOME"])
-        .output()
-        .ok()
-        .and_then(|out| {
-            if !out.status.success() {
-                return None;
-            }
-            let stdout = String::from_utf8_lossy(&out.stdout);
-            let trimmed = stdout.trim();
-            (!trimmed.is_empty()).then(|| trimmed.to_string())
-        })
-    {
+    let mut probe = std::process::Command::new("cmd");
+    probe.args(["/C", "pwsh", "-NoProfile", "-Command", "$PSHOME"]);
+    // CREATE_NO_WINDOW: avoid a console flash from detached parents.
+    #[cfg(windows)]
+    probe.creation_flags(0x0800_0000);
+    if let Some(ps_home) = probe.output().ok().and_then(|out| {
+        if !out.status.success() {
+            return None;
+        }
+        let stdout = String::from_utf8_lossy(&out.stdout);
+        let trimmed = stdout.trim();
+        (!trimmed.is_empty()).then(|| trimmed.to_string())
+    }) {
         let candidate = AbsolutePathBuf::resolve_path_against_base("pwsh.exe", &ps_home);
 
         if is_powershellish_executable_available(candidate.as_path()) {
@@ -150,8 +152,12 @@ fn try_find_powershellish_executable_in_path(candidates: &[&str]) -> Option<Abso
 
 fn is_powershellish_executable_available(powershell_or_pwsh_exe: &std::path::Path) -> bool {
     // This test works for both powershell.exe and pwsh.exe.
-    std::process::Command::new(powershell_or_pwsh_exe)
-        .args(["-NoLogo", "-NoProfile", "-Command", "Write-Output ok"])
+    let mut command = std::process::Command::new(powershell_or_pwsh_exe);
+    command.args(["-NoLogo", "-NoProfile", "-Command", "Write-Output ok"]);
+    // CREATE_NO_WINDOW: avoid a console flash from detached parents.
+    #[cfg(windows)]
+    command.creation_flags(0x0800_0000);
+    command
         .output()
         .map(|output| output.status.success())
         .unwrap_or(false)
