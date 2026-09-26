@@ -345,7 +345,7 @@ pub(crate) async fn prepare(
     prompt.input.retain(|_| {
         let keep = protected[position] || position >= first_kept;
         position += 1;
-        keep;
+        keep
     });
     insert_index(&mut prompt, &complete_history);
     Ok(prompt)

@@ -7,6 +7,8 @@ use std::io::BufRead;
 use std::io::BufReader;
 use std::io::ErrorKind;
 use std::io::Write;
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 use std::process::Child;
 use std::process::ChildStdin;
 use std::process::ChildStdout;
@@ -126,6 +128,9 @@ impl PowershellParserProcess {
             .stdout(Stdio::piped())
             .stderr(Stdio::null());
         codex_protocol::shell_environment::scrub_non_inheritable_env_vars(&mut command);
+        // CREATE_NO_WINDOW: avoid a console flash from detached parents.
+        #[cfg(windows)]
+        command.creation_flags(0x0800_0000);
         let mut child = command.spawn()?;
         let stdin = match take_child_stdin(&mut child) {
             Ok(stdin) => stdin,
