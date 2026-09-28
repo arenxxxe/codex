@@ -14,6 +14,7 @@ use codex_protocol::models::LocalShellAction;
 use codex_protocol::models::ResponseItem;
 use codex_rollout::RolloutRecorder;
 use serde::Deserialize;
+use std::collections::HashSet;
 use std::path::Path;
 
 #[derive(Deserialize)]
@@ -314,6 +315,53 @@ fn history_cutoff(items: &[(usize, &ResponseItem)], budget: usize) -> anyhow::Re
     Ok(first_kept)
 }
 
+/// Windowing can remove a call while retaining its output because each item is
+/// budgeted independently. Drop those outputs before serialization so the
+/// request still satisfies the Responses API call/output invariant.
+fn remove_orphan_tool_outputs(input: &mut Vec<ResponseItem>) {
+    let mut function_call_ids = HashSet::new();
+    let mut tool_search_call_ids = HashSet::new();
+    let mut custom_tool_call_ids = HashSet::new();
+
+    for item in input.iter() {
+        match item {
+            ResponseItem::FunctionCall { call_id, .. }
+            | ResponseItem::LocalShellCall {
+                call_id: Some(call_id),
+                ..
+            } => {
+                function_call_ids.insert(call_id.clone());
+            }
+            ResponseItem::ToolSearchCall {
+                call_id: Some(call_id),
+                ..
+            } => {
+                tool_search_call_ids.insert(call_id.clone());
+            }
+            ResponseItem::CustomToolCall { call_id, .. } => {
+                custom_tool_call_ids.insert(call_id.clone());
+            }
+            _ => {}
+        }
+    }
+
+    input.retain(|item| match item {
+        ResponseItem::FunctionCallOutput {
+            call_id: Some(call_id),
+            ..
+        } => function_call_ids.contains(call_id.as_str()),
+        ResponseItem::CustomToolCallOutput { call_id, .. } => {
+            custom_tool_call_ids.contains(call_id.as_str())
+        }
+        ResponseItem::ToolSearchOutput {
+            call_id: Some(call_id),
+            execution,
+            ..
+        } if execution != "server" => tool_search_call_ids.contains(call_id.as_str()),
+        _ => true,
+    });
+}
+
 fn insert_index(prompt: &mut Prompt, history: &[ResponseItem]) {
     let snapshot = build_snapshot(history);
     let position = prompt
@@ -347,6 +395,7 @@ pub(crate) async fn prepare(
         position += 1;
         keep
     });
+    remove_orphan_tool_outputs(&mut prompt.input);
     insert_index(&mut prompt, &complete_history);
     Ok(prompt)
 }

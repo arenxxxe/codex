@@ -13,7 +13,7 @@ impl ContextualUserFragment for WorkingMemoryInstructions {
         Self::type_markers()
     }
     fn type_markers() -> (&'static str, &'static str) {
-        ("<working_memory>", "</working_memory>")
+        ("工作记忆开始：", "工作记忆结束")
     }
     fn body(&self) -> String {
         format!(

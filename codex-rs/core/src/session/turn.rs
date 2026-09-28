@@ -1652,7 +1652,7 @@ async fn run_sampling_request(
         let responses_metadata = sess
             .responses_metadata(step_context.as_ref(), CodexResponsesRequestKind::Turn)
             .await;
-        let prompt = crate::working_memory::prepare(&sess, &turn_context.config.codex_home, prompt)
+        prompt = crate::working_memory::prepare(&sess, &turn_context.config.codex_home, prompt)
             .await
             .map_err(|err| CodexErrorDetails::InvalidRequest(format!("Working memory: {err:#}")))?;
         if crate::guardian::is_basic_session_source(&turn_context.session_source) {
